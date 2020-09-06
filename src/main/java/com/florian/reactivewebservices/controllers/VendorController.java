@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping({"/api/v1/vendors",VendorController.BASE_URL})
+@RequestMapping({"/api/v1/vendors", VendorController.BASE_URL})
 public class VendorController {
     public static final String BASE_URL = "/api/v1/vendors/";
 
@@ -29,5 +29,36 @@ public class VendorController {
     public Mono<Vendor> findById(@PathVariable String id) {
         return vendorRepository.findById(id);
 
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Vendor> createVendor(@RequestBody Mono<Vendor> vendorMono) {
+        return vendorMono.flatMap(vendorRepository::save);
+    }
+
+    @PutMapping("{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Vendor> updateVendor(@RequestBody Mono<Vendor> vendorMono, @PathVariable String id) {
+        return vendorMono.flatMap(vendor -> {
+            vendor.setId(id);
+            return vendorRepository.save(vendor);
+        });
+    }
+
+    @PatchMapping("{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Vendor> patchVendor(@RequestBody Vendor sentVendor, @PathVariable String id) {
+        Mono<Vendor> patchedVendor = vendorRepository.findById(id)
+                .map(vendor -> {
+                    if (sentVendor.getFirstName() != null) {
+                        vendor.setFirstName(sentVendor.getFirstName());
+                    }
+                    if (sentVendor.getLastName() != null) {
+                        vendor.setLastName(sentVendor.getLastName());
+                    }
+                    return vendor;
+                });
+        return patchedVendor.flatMap(vendorRepository::save);
     }
 }
